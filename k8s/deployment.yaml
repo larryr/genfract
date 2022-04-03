@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: genfract
+spec:
+  replicas: 8
+  selector:
+    matchLabels:
+      name: genfract
+  template:
+    metadata:
+      labels:
+        name: genfract
+    spec:
+      containers:
+        - name: genfract
+          image: ${REGISTRY}genfract:latest
+          ports:
+            - containerPort: 4000
