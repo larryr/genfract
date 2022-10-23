@@ -5,18 +5,21 @@ help:
 	@echo ""
 	@echo "build    -- build docker image"
 	@echo "toreg    -- push image to docker hub"
+	@echo "drun     -- run local docker image"
+	@echo "** k8s helpers **"
 	@echo "deploy   -- deploy as deployment and loadbalanced service"
 	@echo "redo     -- k8s redeploy"
 	@echo "delete   -- delete deployment & service"
 	@echo "mkpod    -- make a k8s pod"
 	@echo "delpod   -- delete k8s pod"
-	@echo "drun     -- run local docker image"
+
 	@echo "logs     -- show logs for deployment (each pod)"
 
 # any local configuration
 -include .loccfg.mk
 
-REGISTRY ?= larryrau
+REGISTRY ?= larryrau/
+
 
 build:
 	go install genfract.go
@@ -28,34 +31,40 @@ image:
 toreg: image
 	docker push $(REGISTRY)genfract
 
-deploy: xx
-	kubectl apply -f xx
-	kubectl apply -f k8s/service.yaml
-	@rm xx
-
-redo:
-	kubectl rollout restart deployment/genfract
-
-delete:
-	kubectl delete service/genfract
-	kubectl delete deployment/genfract
-
-mkpod:
-	kubectl run genfract --image=$(REGISTRY)genfract --port=4000
-	kubectl get pods
-
-delpod:
-	kubectl delete pod/genfract
-
 drun:
 	docker run -it -p 4000:4000 $(REGISTRY)genfract
 
 irun:
 	docker run -it -p 4000:4000 -u root --entrypoint /bin/sh $(REGISTRY)genfract
 
-logs:
+
+#
+# k8s helpers
+# note: kk -> use of envsubst to replace use of env in k8s files
+#
+
+kdeploy: kk
+	kubectl apply -f kk
+	kubectl apply -f k8s/service.yaml
+	@rm kk
+
+krestart:
+	kubectl rollout restart deployment/genfract
+
+kdelete:
+	kubectl delete service/genfract
+	kubectl delete deployment/genfract
+
+kmkpod:
+	kubectl run genfract --image=$(REGISTRY)genfract --port=4000
+	kubectl get pods
+
+kdelpod:
+	kubectl delete pod/genfract
+
+klogs:
 	kubectl logs --tail=5 -l name=genfract
 
-xx:
-	-@rm xx
-	cat k8s/deployment.yaml |(REGISTRY=$(REGISTRY)  envsubst) >> xx
+kk:
+	-@rm kk
+	cat k8s/deployment.yaml |(REGISTRY=$(REGISTRY)  envsubst) >> kk
